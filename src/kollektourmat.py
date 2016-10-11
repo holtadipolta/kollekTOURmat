@@ -4,6 +4,7 @@ import os
 import math
 from time import *
 import time
+import subprocess
 
 #fuer gpio
 import RPi.GPIO as GPIO
@@ -21,15 +22,15 @@ debug=0	                #Debugmodus: 0=aus, 1=an
 data = dict()           #Daten fuer die Werte aus der KonfigDatei
 maxdistance = 40.00     #Zielentfernung in Metern
 actual_lat=53.554022    #Startwert fuer aktuelle Latitude
-actual_lon=9.992155	    #Startwert fuer aktuelle Longitude
-gpsd = None 			#fuer gpsd
+actual_lon=9.99215      #Startwert fuer aktuelle Longitude
+gpsd = None 		#fuer gpsd
 gpsp=None
 parser = ConfigParser() #Konfigurationsparser
 KonfigFile="Tour.ini"	#Konfigurationsdatei
-LED_RUN=4               #GPIO PORT4:  Programm lauuft
-LED_GPSDATA=17			#GPIO PORT17: Valide GPS-Daten werden empfangen
-LED_POSITION=27			#GPIO PORT27: Tour-Punkt wurde erreicht
-SWITCH_PRINT=22			#GPIO Port22: Taster zum Drucken
+LED_RUN=4               #GPIO PORT4:  Programm gestartet 
+LED_GPSDATA=17		#GPIO PORT17: Valide GPS-Daten werden empfangen 
+LED_POSITION=27		#GPIO PORT27: Tour-Punkt wurde erreicht
+SWITCH_PRINT=22		#GPIO Port22: Taster zum Bild Ausdruck
 
 
 #GPS Klasse
@@ -65,7 +66,7 @@ def readConfig():
 			    data[section]["Bilder"][name] = value
     return
 
-#Feststellen welchen Radius die Stationspunkte zur aktuellen gps Position haben
+#Feststellen welchen Radius die Stationspunkte zur aktuellen gps-Position haben
 def gpsradius(x, y):
     lat1 =x
     lon1 = y
@@ -84,6 +85,7 @@ def printBild(Datei):
     print("gedruckt wird: {}".format(Datei))
     GPIO.output(LED_RUN,GPIO.HIGH)
     #PRINT Befehl lpr
+    subprocess.call("lpr {}".format(Datei))
     time.sleep(5)
     GPIO.output(LED_RUN,GPIO.LOW)
 	
@@ -136,10 +138,10 @@ def main(argv):
 			actual_lat=float(data["Punkt1"]["Daten"]["Latitude"])
 			actual_lon=float(data["Punkt1"]["Daten"]["Longitude"])
 				
-		while float(actual_lat) > 1.0  and str(actual_lat)[0] !="n" : # Test ob valide Daten empfangen werden.	
+		while float(actual_lat) > 1.0  and str(actual_lat)[0] !="n" : # Schleife solange valide Daten empfangen werden.	
 		
 			if not debug:
-				#GPS Daten innerhalb der aktualisieren
+				#GPS Daten innerhalb der Schleife aktualisieren
 				actual_lat=gpsd.fix.latitude
 				actual_lon=gpsd.fix.longitude	
 		
@@ -195,3 +197,4 @@ GPIO.cleanup()                  ## Cleanup
 
 if __name__ == "__main__":
     main(sys.argv)
+
