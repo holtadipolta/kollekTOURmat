@@ -89,6 +89,8 @@ def printBild(Datei):
 	
 def main(argv):
 	#Los gehts:
+	global actual_lat
+	global actual_lon
 	#GPIO initialisieren
 	GPIO.setmode(GPIO.BCM)
 	GPIO.setwarnings(False)
@@ -125,18 +127,22 @@ def main(argv):
 		GPIO.output(LED_RUN,GPIO.HIGH)
 		GPIO.output(LED_GPSDATA,GPIO.LOW)
 		time.sleep(3)
-		global actual_lat
-		global actual_lon
+		if not debug:
+			#GPS Daten aktualisieren
+			actual_lat=gpsd.fix.latitude
+			actual_lon=gpsd.fix.longitude	
+		else:
+			#GPS Daten werdden von Punkt1 uebernommen
+			actual_lat=float(data["Punkt1"]["Daten"]["Latitude"])
+			actual_lon=float(data["Punkt1"]["Daten"]["Longitude"])
+				
 		while float(actual_lat) > 1.0  and str(actual_lat)[0] !="n" : # Test ob valide Daten empfangen werden.	
 		
 			if not debug:
-				#GPS Daten aktualisieren
+				#GPS Daten innerhalb der aktualisieren
 				actual_lat=gpsd.fix.latitude
 				actual_lon=gpsd.fix.longitude	
-			else:
-				#GPS Daten werdden von Punkt1 uebernommen
-				actual_lat=float(data["Punkt1"]["Daten"]["Latitude"])
-				actual_lon=float(data["Punkt1"]["Daten"]["Longitude"])
+		
 		
 			print ("Valide Daten empfangen: {:f}".format(actual_lat))
 			print ("-----------------------\n")
@@ -164,7 +170,7 @@ def main(argv):
 						Bild="bild{}".format(Bildnummer)
 						#Pfad des Bildes und Namen ermitteln
 						Datei=data[datensatz]["Daten"]["Ordner"] + data[datensatz]["Bilder"][Bild]
-						print (" {} Bilder verfuegbar.  Bild{} wird gedruckt {} \n".format(AnzBilder, Bildnummer,data[datensatz]["Bilder"][Bild]))
+						print (" {} Bilder verfuegbar.  Bild{} wurde ausgesucht: {} \n".format(AnzBilder, Bildnummer,data[datensatz]["Bilder"][Bild]))
 						value = GPIO.input(SWITCH_PRINT)
 						if not value: #Taster gedrueckt?
 							 GPIO.output(LED_POSITION,GPIO.LOW)
