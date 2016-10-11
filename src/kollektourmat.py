@@ -17,18 +17,20 @@ from configparser import ConfigParser
 import random
 
 #Globale Variablen
-debug=0					#Debugmodus: 0=aus, 1=an
-data = dict()			#Daten fuer die Werte aus der KonfigDatei
-maxdistance = 40.0		#Zielentfernung in Metern
-actual_lat=53.554022	#Startwert fuer aktuelle Latitude
-actual_lon=9.992155		#Startwert fuer aktuelle Longitude
+debug=0	                #Debugmodus: 0=aus, 1=an
+data = dict()           #Daten fuer die Werte aus der KonfigDatei
+maxdistance = 40.00     #Zielentfernung in Metern
+actual_lat=53.554022    #Startwert fuer aktuelle Latitude
+actual_lon=9.992155	    #Startwert fuer aktuelle Longitude
 gpsd = None 			#fuer gpsd
+gpsp=None
 parser = ConfigParser() #Konfigurationsparser
 KonfigFile="Tour.ini"	#Konfigurationsdatei
-LED_RUN=4				#GPIO PORT4:  Programm lauuft
+LED_RUN=4               #GPIO PORT4:  Programm lauuft
 LED_GPSDATA=17			#GPIO PORT17: Valide GPS-Daten werden empfangen
 LED_POSITION=27			#GPIO PORT27: Tour-Punkt wurde erreicht
 SWITCH_PRINT=22			#GPIO Port22: Taster zum Drucken
+
 
 #GPS Klasse
 class GpsPoll(threading.Thread):
@@ -81,69 +83,74 @@ def gpsradius(x, y):
 def printBild(Datei):
     print("gedruckt wird: {}".format(Datei))
     GPIO.output(LED_RUN,GPIO.HIGH)
+    #PRINT Befehl lpr
     time.sleep(5)
     GPIO.output(LED_RUN,GPIO.LOW)
 	
-
-#Los gehts:
-#GPIO initialisieren
-GPIO.setmode(GPIO.BCM)
-GPIO.setwarnings(False)
-GPIO.setup(LED_RUN,GPIO.OUT)
-GPIO.setup(LED_GPSDATA,GPIO.OUT)
-GPIO.setup(LED_POSITION,GPIO.OUT)
-GPIO.setup(SWITCH_PRINT,GPIO.IN)
-GPIO.output(LED_GPSDATA,GPIO.LOW)
-GPIO.output(LED_POSITION,GPIO.LOW)
-GPIO.output(LED_RUN,GPIO.LOW)
-time.sleep(3)
-
-#Konfigurationsdatei lesen
-parser.read(KonfigFile)
-if not debug:
-	gpsp = GpsPoll() # create the thread
-readConfig()
-#print data
-
-if not debug:
-	try:
-		gpsp.start()
-
-	except (KeyboardInterrupt, SystemExit): #ctrl+c?
-		print "\nKilling Thread..."
-		gpsp.running = False
-		gpsp.join() # thread beenden
-    
-time.sleep(3)
-while True:
-	#Programm lauuft -> LED einschalten
-	GPIO.output(LED_RUN,GPIO.HIGH)
+def main(argv):
+	#Los gehts:
+	#GPIO initialisieren
+	GPIO.setmode(GPIO.BCM)
+	GPIO.setwarnings(False)
+	GPIO.setup(LED_RUN,GPIO.OUT)
+	GPIO.setup(LED_GPSDATA,GPIO.OUT)
+	GPIO.setup(LED_POSITION,GPIO.OUT)
+	GPIO.setup(SWITCH_PRINT,GPIO.IN)
+	#Alle Ausgaenge aus:
 	GPIO.output(LED_GPSDATA,GPIO.LOW)
+	GPIO.output(LED_POSITION,GPIO.LOW)
+	GPIO.output(LED_RUN,GPIO.LOW)
 	time.sleep(3)
-	
+
+	#Konfigurationsdatei lesen
+	parser.read(KonfigFile)
 	if not debug:
-		#GPS Daten aktualisieren
-		actual_lat=gpsd.fix.latitude
-		actual_lon=gpsd.fix.longitude	
-	else:
-		#GPS Daten werdden von Punkt1 uebernommen
-		actual_lat=float(data["Punkt1"]["Daten"]["Latitude"])
-		actual_lon=float(data["Punkt1"]["Daten"]["Longitude"])
+		global gpsp
+		gpsp = GpsPoll() # create the thread
+	readConfig()
+	#print data
+
+	if not debug:
+		try:
+			gpsp.start()
+
+		except (KeyboardInterrupt, SystemExit): #ctrl+c?
+			print "\nKilling Thread..."
+			gpsp.running = False
+			gpsp.join() # thread beenden
+    
+	time.sleep(3)
+	while True:
+		#Programm lauuft -> LED-RUN einschalten
+		GPIO.output(LED_RUN,GPIO.HIGH)
+		GPIO.output(LED_GPSDATA,GPIO.LOW)
+		time.sleep(3)
+		global actual_lat
+		global actual_lon
+		while float(actual_lat) > 1.0  and str(actual_lat)[0] !="n" : # Test ob valide Daten empfangen werden.	
 		
-	while float(actual_lat) > 1.0  and str(actual_lat)[0] !="n" : # Test ob valide Daten empfangen werden.	
+			if not debug:
+				#GPS Daten aktualisieren
+				actual_lat=gpsd.fix.latitude
+				actual_lon=gpsd.fix.longitude	
+			else:
+				#GPS Daten werdden von Punkt1 uebernommen
+				actual_lat=float(data["Punkt1"]["Daten"]["Latitude"])
+				actual_lon=float(data["Punkt1"]["Daten"]["Longitude"])
 		
-		print ("Valide Daten empfangen: {:f}".format(actual_lat))
-		print ("-----------------------\n")
-		time.sleep(1)
-		printFlag = False
-		#Auswertung der Datensaetze
-		for datensatz in data:
-			#Entfernung von aktueller Pos. ermitteln
-			distance=gpsradius(float(data[datensatz]["Daten"]["Latitude"]),float(data[datensatz]["Daten"]["Longitude"])) 
-			print ("Entfernung von {}: {:.2f}m".format(datensatz, distance))
+			print ("Valide Daten empfangen: {:f}".format(actual_lat))
+			print ("-----------------------\n")
+			time.sleep(1)
+			printFlag = False
+			#Auswertung der Datensaetze
+			for datensatz in data:
+				#Entfernung von aktueller Pos. ermitteln
+				distance=gpsradius(float(data[datensatz]["Daten"]["Latitude"]),float(data[datensatz]["Daten"]["Longitude"])) 
+				print ("Entfernung von {}: {:.2f}m".format(datensatz, distance))
 			
-			#Befinden wir uns  an einem Punkt?
-			if (distance <= maxdistance):
+				#Befinden wir uns  an einem Punkt?
+				if (distance <= maxdistance):
+						#LED-Postition an, Rest aus
 						GPIO.output(LED_RUN,GPIO.LOW)
 						GPIO.output(LED_GPSDATA,GPIO.LOW)
 						GPIO.output(LED_POSITION,GPIO.HIGH)
@@ -167,14 +174,18 @@ while True:
 								printBild(Datei)
 					    
 			
-		if not  printFlag :					
-			GPIO.output(LED_RUN,GPIO.LOW)
-			GPIO.output(LED_POSITION,GPIO.LOW)
-			GPIO.output(LED_GPSDATA,GPIO.HIGH)
+			if not  printFlag :	
+				#LED-GPSDATA an, Rest aus				
+				GPIO.output(LED_RUN,GPIO.LOW)
+				GPIO.output(LED_POSITION,GPIO.LOW)
+				GPIO.output(LED_GPSDATA,GPIO.HIGH)
 		
-	time.sleep(5)
-	print("Keine validen Daten empfangen")
+		time.sleep(5)
+		print("Keine validen Daten empfangen")
 
-
-			
+	
 GPIO.cleanup()                  ## Cleanup
+
+
+if __name__ == "__main__":
+    main(sys.argv)
