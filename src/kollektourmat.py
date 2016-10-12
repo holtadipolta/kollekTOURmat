@@ -4,7 +4,7 @@ import os
 import math
 from time import *
 import time
-import subprocess
+import commands
 
 #fuer gpio
 import RPi.GPIO as GPIO
@@ -18,7 +18,7 @@ from configparser import ConfigParser
 import random
 
 #Globale Variablen
-debug=0	                #Debugmodus: 0=aus, 1=an
+debug=1	                #Debugmodus: 0=aus, 1=an
 data = dict()           #Daten fuer die Werte aus der KonfigDatei
 maxdistance = 40.00     #Zielentfernung in Metern
 actual_lat=53.554022    #Startwert fuer aktuelle Latitude
@@ -85,7 +85,8 @@ def printBild(Datei):
     print("gedruckt wird: {}".format(Datei))
     GPIO.output(LED_RUN,GPIO.HIGH)
     #PRINT Befehl lpr
-    subprocess.call("lpr {}".format(Datei))
+    cmd = "/usr/bin/lpr " + Datei 
+    commands.getoutput(cmd)
     time.sleep(5)
     GPIO.output(LED_RUN,GPIO.LOW)
 	
@@ -110,7 +111,7 @@ def main(argv):
 	parser.read(KonfigFile)
 	if not debug:
 		global gpsp
-		gpsp = GpsPoll() # create the thread
+		gpsp = GpsPoll() # Thread starten
 	readConfig()
 	#print data
 
@@ -177,9 +178,8 @@ def main(argv):
 						if not value: #Taster gedrueckt?
 							 GPIO.output(LED_POSITION,GPIO.LOW)
 							 time.sleep(3)
-							 if not debug:
-								#Bild ausdrucken
-								printBild(Datei)
+							 #Bild ausdrucken
+							 printBild(Datei)
 					    
 			
 			if not  printFlag :	
