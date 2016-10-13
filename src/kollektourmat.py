@@ -138,6 +138,11 @@ def main(argv):
 			#GPS Daten werdden von Punkt1 uebernommen
 			actual_lat=float(data["Punkt1"]["Daten"]["Latitude"])
 			actual_lon=float(data["Punkt1"]["Daten"]["Longitude"])
+			#LED-GPSDATA an, Rest aus				
+			GPIO.output(LED_RUN,GPIO.LOW)
+			GPIO.output(LED_POSITION,GPIO.LOW)
+			GPIO.output(LED_GPSDATA,GPIO.HIGH)
+			time.sleep(3)
 				
 		while float(actual_lat) > 1.0  and str(actual_lat)[0] !="n" : # Schleife solange valide Daten empfangen werden.	
 		
@@ -177,7 +182,7 @@ def main(argv):
 						value = GPIO.input(SWITCH_PRINT)
 						if not value: #Taster gedrueckt?
 							 GPIO.output(LED_POSITION,GPIO.LOW)
-							 time.sleep(3)
+							 time.sleep(0.5)
 							 #Bild ausdrucken
 							 printBild(Datei)
 					    
