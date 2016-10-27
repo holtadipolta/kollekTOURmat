@@ -16,8 +16,8 @@ Außerdem wird noch das Modul configparser benötigt:
 sudo pip install -v configparser
 ```
 
-Ohne angeschlossene GPS-Gerät muss in der Datei kollekTOURmat.py die Variable debug auf 1 gestellt werden:
-Die aktuelle Position entspricht dann den Koordinaten des ersten Tour-Punkts.
+Ohne angeschlossenes GPS-Gerät muss in der Datei kollekTOURmat.py die Variable debug auf 1 gestellt werden.
+Die aktuelle Position entspricht dann immer den Koordinaten des ersten Tour-Punkts.
 ```
 debug=1
 ```
