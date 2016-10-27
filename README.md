@@ -8,7 +8,7 @@ Dies ist die Software dazu, programmiert für einen raspberry pi mit angeschloss
 ### Installation 
 Folgende Pakete werden benötigt:
 ```
-sudo apt-get install python-pip gpsd gpsd-clients```
+sudo apt-get install python-pip gpsd gpsd-clients
 ```
 
 Außerdem wird noch das Modul configparser benötigt:
@@ -17,7 +17,7 @@ sudo pip install -v configparser
 ```
 
 Ohne angeschlossene GPS-Gerät muss in der Datei kollekTOURmat.py die Variable debug auf 1 gestellt werden:
-
+Die aktuelle Position entspricht dann den Koordinaten des ersten Tour-Punkts.
 ```
 debug=1
 ```
