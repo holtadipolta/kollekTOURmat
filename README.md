@@ -21,3 +21,6 @@ Die aktuelle Position entspricht dann immer den Koordinaten des ersten Tour-Punk
 ```
 debug=1
 ```
+### Anschluss von Taster und LED
+
+![Schaltung](kollektourmat_schaltung.png)
